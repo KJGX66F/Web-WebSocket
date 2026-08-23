@@ -2,15 +2,49 @@ const http = require('http');
 const net = require('net');
 const { WebSocketServer } = require('ws');
 
-// 固定 UUID，可直接使用或在 Livemy 环境变量中覆盖
+// 固定 UUID，可在此修改或通过环境变量覆盖
 const UUID_STR = process.env.UUID || 'de0b29a6-ae3e-4b96-a513-e4c1404c0529';
 const UUID = UUID_STR.replace(/-/g, '');
 const PORT = process.env.PORT || 3000;
 
-// HTTP 服务：专门应对 Livemy 平台的健康检查
+// 伪装 HTML 页面内容
+const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Hub - Operational</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: #1e293b; border-radius: 16px; padding: 40px; max-width: 480px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); border: 1px solid #334155; text-align: center; }
+        .status-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(34, 197, 94, 0.1); color: #4ade80; padding: 6px 16px; border-radius: 9999px; font-size: 14px; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .status-dot { width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 10px #22c55e; }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 10px; color: #fff; }
+        p { color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #0f172a; padding: 16px; border-radius: 12px; text-align: left; font-size: 12px; color: #64748b; }
+        .metrics div span { display: block; color: #f1f5f9; font-weight: 600; font-size: 14px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="status-badge">
+            <span class="status-dot"></span> Service Operational
+        </div>
+        <h1>Application Gateway</h1>
+        <p>Node.js runtime environment is healthy and responding to traffic.</p>
+        <div class="metrics">
+            <div>Status<span>200 OK</span></div>
+            <div>Protocol<span>HTTP/WS</span></div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+// HTTP 服务：响应伪装网页（通过平台健康检查）
 const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Server is active');
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(htmlContent);
 });
 
 // WebSocket 服务：响应 VLESS 代理流量
@@ -49,6 +83,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
-    console.log(`Node UUID: ${UUID_STR}`);
+    console.log(`Server running on port ${PORT}`);
 });
